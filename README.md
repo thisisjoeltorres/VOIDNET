@@ -33,18 +33,6 @@ Desarrollar un sistema inteligente que analice texto y voz usando PLN para ident
 
 ---
 
-## 📁 Estructura del Proyecto (Flutter)
-
-/lib ├── main.dart ├── ui/ │ ├── screens/ │ └── components/ ├── models/ ├── services/ └── controllers/
-
-/android └── app/src/main/kotlin/... (código nativo en Kotlin)
-
-/assets ├── images/ └── audio/
-
-/test
-
----
-
 ## 🚀 Roadmap Inicial
 
 - [x] Inicializar proyecto Flutter + configuración con Kotlin
