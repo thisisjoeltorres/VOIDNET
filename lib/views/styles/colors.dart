@@ -4,7 +4,7 @@ class AppColors {
   // Default Light Theme
 
   static Color bgLight = const Color(0xFFFAF9F6);
-  static Color fgLight = const Color(0xFF0B1215);
+  static Color fgLight = const Color(0xFF222E50);
   static Color primaryLight = const Color(0xFF102F9F);
   static Color disabledPrimaryLight = const Color(0xFF979999);
   static Color activePrimaryLight = const Color(0xFFECEEF6);

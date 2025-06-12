@@ -37,7 +37,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: any
-  flutter_svg: ^2.0.10+1
+  flutter_svg: ^2.1.0
   shared_preferences: ^2.2.3
   rx_shared_preferences: ^4.0.0
   flutter_timezone: ^3.0.1
@@ -84,6 +84,9 @@ flutter:
     - assets/images/illustrations/get-started-welcome.png
     - assets/images/illustrations/get-started-talk.png
     - assets/images/illustrations/get-started-support.png
+    - assets/images/illustrations/kana-meditation.svg
+    - assets/images/brand/sentai-logo.svg
+    - assets/images/brand/sentai-logo-dark.svg
 
   fonts:
     - family: DMSans
