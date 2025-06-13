@@ -37,6 +37,7 @@ class _ChatbotViewState extends State<ChatbotView>
   final TextEditingController _controller = TextEditingController();
   final List<ChatMessage> _messages = [];
   final List<Map<String, dynamic>> _chatHistory = [];
+  final List<String> _summaryHistory = [];
   ChatMessage? _typingMessage;
 
   @override
@@ -82,6 +83,9 @@ class _ChatbotViewState extends State<ChatbotView>
     }
 
     return """
+    IMPORTANTE: Comienza tu respuesta con una línea como esta:
+    [RESUMEN OCULTO]: resumen aquí
+    Luego continúa con tu respuesta natural para el usuario.
 Eres un terapeuta profesional en salud mental llamado Kana 🌧️. Has recibido la siguiente información de un usuario que completó un formulario de evaluación emocional. Analiza sus respuestas con empatía y claridad.
 
 Información del usuario:
@@ -207,6 +211,24 @@ Estoy aquí para escucharte con cariño, a tu ritmo. ¿Quieres contarme más sob
 """;
   }
 
+  Map<String, String> _extractHiddenSummary(String fullResponse) {
+    final regex = RegExp(r'^\[RESUMEN OCULTO\]: (.*?)\n', dotAll: true);
+    final match = regex.firstMatch(fullResponse);
+    if (match != null) {
+      final summary = match.group(1) ?? '';
+      final visibleText = fullResponse.replaceFirst(regex, '').trim();
+      return {
+        'summary': summary,
+        'visible': visibleText,
+      };
+    } else {
+      return {
+        'summary': '',
+        'visible': fullResponse.trim(),
+      };
+    }
+  }
+
   void _startLoadingSequence() {
     // Cambiar mensaje cada 2.5 segundos
     _messageTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
@@ -248,11 +270,20 @@ Estoy aquí para escucharte con cariño, a tu ritmo. ¿Quieres contarme más sob
 
       try {
         final response = await ChatService.sendMessage(systemPrompt);
+        final parsed = _extractHiddenSummary(response);
 
         setState(() {
           _messages.remove(_typingMessage);
-          _messages.add(ChatMessage(message: response, isUser: false));
-          _addToChatHistory(response, false);
+          _messages.add(ChatMessage(message: parsed['visible']!, isUser: false));
+          _addToChatHistory(parsed['visible']!, false);
+
+          if (parsed['summary']!.isNotEmpty) {
+            _summaryHistory.add(parsed['summary']!);
+            if (_summaryHistory.length > 5) {
+              _summaryHistory.removeAt(0);
+            }
+          }
+
           _typingMessage = null;
         });
       } catch (e) {
@@ -293,12 +324,25 @@ Estoy aquí para escucharte con cariño, a tu ritmo. ¿Quieres contarme más sob
     _controller.clear();
 
     try {
-      final response = await ChatService.sendMessage(text);
+      final contextSummary = _summaryHistory.isNotEmpty
+          ? "IMPORTANTE: Comienza tu respuesta con una línea como esta: [RESUMEN OCULTO]: resumen aquí. Contexto reciente:\n" + _summaryHistory.join('\n') + "\n\n"
+          : "";
+      final fullPrompt = contextSummary + text;
+      final response = await ChatService.sendMessage(fullPrompt);
+      final parsed = _extractHiddenSummary(response);
 
       setState(() {
         _messages.remove(_typingMessage);
-        _messages.add(ChatMessage(message: response, isUser: false));
-        _addToChatHistory(response, false);
+        _messages.add(ChatMessage(message: parsed['visible']!, isUser: false));
+        _addToChatHistory(parsed['visible']!, false);
+
+        if (parsed['summary']!.isNotEmpty) {
+          _summaryHistory.add(parsed['summary']!);
+          if (_summaryHistory.length > 5) {
+            _summaryHistory.removeAt(0);
+          }
+        }
+
         _typingMessage = null;
       });
     } catch (e) {
@@ -370,7 +414,7 @@ Estoy aquí para escucharte con cariño, a tu ritmo. ¿Quieres contarme más sob
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        SvgPicture.asset('assets/kana-meditation.svg', height: 160),
+        SvgPicture.asset('assets/images/illustrations/kana-meditation.svg', height: 160),
         const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30.0),
