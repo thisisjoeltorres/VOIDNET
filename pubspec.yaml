@@ -37,6 +37,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: any
+  http: ^1.4.0
   flutter_svg: ^2.1.0
   shared_preferences: ^2.2.3
   rx_shared_preferences: ^4.0.0
@@ -49,6 +50,7 @@ dependencies:
   showcaseview: ^4.0.1
   flutter_dotenv: ^5.0.2
   path_provider: ^2.1.5
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:
@@ -87,6 +89,7 @@ flutter:
     - assets/images/illustrations/kana-meditation.svg
     - assets/images/brand/sentai-logo.svg
     - assets/images/brand/sentai-logo-dark.svg
+    - .env
 
   fonts:
     - family: DMSans

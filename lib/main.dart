@@ -11,8 +11,8 @@ import 'package:voidnet/views/styles/themes.dart';
 import 'l10n/l10n.dart';
 
 Future<void> main() async {
+  await dotenv.load();
   WidgetsFlutterBinding.ensureInitialized();
-  // await dotenv.load();
   await SharedPrefs().init();
   String? userName = SharedPrefs().prefs.getString('userName');
   bool validUser = (userName != null);

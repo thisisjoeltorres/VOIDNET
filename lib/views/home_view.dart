@@ -1,16 +1,12 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:voidnet/views/disclaimer_view.dart';
 import 'package:voidnet/views/settings_view.dart';
 import 'package:voidnet/views/styles/spaces.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:voidnet/views/personal_analysis_view.dart';
 import 'package:voidnet/views/utils/custom-page-router.dart';
 import 'package:voidnet/views/utils/shared_prefs.dart';
 import 'package:voidnet/views/components/health_card.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class HomeView extends StatefulWidget {
 
@@ -56,7 +52,7 @@ class _HomeViewState extends State<HomeView> {
             color: Theme.of(context).colorScheme.outline, width: 0.0),
       ),
       border: const OutlineInputBorder(),
-      suffixIcon: Icon(Icons.send_rounded, color: Colors.black,)
+      suffixIcon: Icon(Icons.send_rounded, color: Colors.black)
     );
   }
 
@@ -170,10 +166,11 @@ class _HomeViewState extends State<HomeView> {
                         ],
                       ),
                       VerticalSpacing(24.0),
-                      // Text(
-                      //     style: Theme.of(context).textTheme.labelSmall,
-                      //     "Recursos"
-                      // ),
+                      Text(
+                          style: Theme.of(context).textTheme.labelSmall,
+                          "Mis conversaciones recientes"
+                      ),
+                      // Aca el historial de conversaciones
                     ]),
                   ),
                 ]),

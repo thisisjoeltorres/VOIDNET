@@ -117,21 +117,38 @@ class _PersonalAnalysisViewState extends State<PersonalAnalysisView> {
     final currentType = _questions[_currentQuestionIndex]['type'];
     final currentQuestion = _questions[_currentQuestionIndex];
     bool canContinue = false;
-
     dynamic answer;
 
     if (currentType == 'single') {
       canContinue = _selectedOptionIndex != null;
-      answer = _selectedOptionIndex;
+      if (canContinue) {
+        answer = {
+          'selectedIndex': _selectedOptionIndex,
+          'selectedText': currentQuestion['options'][_selectedOptionIndex!],
+        };
+      }
     } else if (currentType == 'multiple') {
       canContinue = _selectedMultiOptions.isNotEmpty;
-      answer = _selectedMultiOptions;
+      if (canContinue) {
+        answer = _selectedMultiOptions.map((index) => {
+          'selectedIndex': index,
+          'selectedText': currentQuestion['options'][index],
+        }).toList();
+      }
     } else if (currentType == 'text') {
-      canContinue = _textController.text.trim().length <= 1000;
-      answer = _textController.text.trim();
+      final text = _textController.text.trim();
+      canContinue = text.length <= 1000;
+      answer = text;
     } else if (currentType == 'likert') {
       canContinue = _likertResponses.length == currentQuestion['subQuestions'].length;
-      answer = Map.from(_likertResponses);
+      if (canContinue) {
+        answer = currentQuestion['subQuestions']
+            .asMap()
+            .map((index, subQuestion) => MapEntry(
+          subQuestion,
+          currentQuestion['scale'][_likertResponses[index] ?? 0],
+        ));
+      }
     }
 
     if (canContinue) {

@@ -1,16 +1,25 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:showcaseview/showcaseview.dart';
+import 'package:voidnet/views/components/chat_message.dart';
+import 'package:voidnet/views/dashboard_view.dart';
+import 'package:voidnet/views/styles/spaces.dart';
+import 'package:voidnet/views/utils/chat_service.dart';
+import 'package:voidnet/views/utils/custom-page-router.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ChatbotView extends StatefulWidget {
   final List<Map<String, dynamic>>? responses;
+
   const ChatbotView({super.key, this.responses});
 
   @override
   State<ChatbotView> createState() => _ChatbotViewState();
 }
 
-class _ChatbotViewState extends State<ChatbotView> with SingleTickerProviderStateMixin {
+class _ChatbotViewState extends State<ChatbotView>
+    with SingleTickerProviderStateMixin {
   bool isLoading = false;
   bool hasAnalysis = false;
   String loadingMessage = "Analizando tus resultados...";
@@ -22,8 +31,13 @@ class _ChatbotViewState extends State<ChatbotView> with SingleTickerProviderStat
     "Analizando tus resultados...",
     "Evaluando con historial existente...",
     "Solo un momento...",
-    "Casi listo..."
+    "Casi listo...",
   ];
+
+  final TextEditingController _controller = TextEditingController();
+  final List<ChatMessage> _messages = [];
+  final List<Map<String, dynamic>> _chatHistory = [];
+  ChatMessage? _typingMessage;
 
   @override
   void initState() {
@@ -47,6 +61,150 @@ class _ChatbotViewState extends State<ChatbotView> with SingleTickerProviderStat
     } else {
       _startChat();
     }
+  }
+
+  void _addToChatHistory(String message, bool isUser) {
+    _chatHistory.add({
+      'timestamp': DateTime.now().toIso8601String(),
+      'sender': isUser ? 'user' : 'kana',
+      'message': message,
+    });
+  }
+
+  String _buildDeepseekPrompt(List<dynamic> responses) {
+    final buffer = StringBuffer();
+
+    for (final item in responses) {
+      final map = item as Map<String, dynamic>;
+      final question = map['question'] ?? '';
+      final answer = map['answer'] ?? '';
+      buffer.writeln('• $question\nRespuesta: $answer\n');
+    }
+
+    return """
+Eres un terapeuta profesional en salud mental llamado Kana 🌧️. Has recibido la siguiente información de un usuario que completó un formulario de evaluación emocional. Analiza sus respuestas con empatía y claridad.
+
+Información del usuario:
+---
+${buffer.toString()}
+---
+Recuerda: No repitas los datos textualmente, responde con análisis humano y emocional.
+""";
+  }
+
+  String _generateInitialMessage(List<Map<String, dynamic>> responses) {
+    String emotionalState = '';
+    String reason = '';
+    String details = '';
+    String depressionSigns = '';
+    String relationships = '';
+
+    for (var q in responses) {
+      final String question = q['question'];
+      final String type = q['type'];
+      final dynamic answer = q['answer'];
+
+      if (question.contains('¿Cómo te sientes hoy?') && type == 'single') {
+        final options = [
+          'te sientes bastante bien',
+          'te sientes bien',
+          'te sientes neutral',
+          'te sientes algo mal',
+          'te sientes bastante mal',
+        ];
+        if (answer is Map && answer['selectedIndex'] is int) {
+          final index = answer['selectedIndex'];
+          if (index >= 0 && index < options.length) {
+            emotionalState = options[index];
+          }
+        }
+      }
+
+      if (question.contains('¿Qué te motivó') && type == 'multiple') {
+        if (answer is List) {
+          final reasons =
+              answer
+                  .map((item) => item['selectedText'])
+                  .whereType<String>()
+                  .toList();
+          reason = reasons.join(', ').toLowerCase();
+        }
+      }
+
+      if (question.contains('escribir algo más') && type == 'text') {
+        if (answer is String && answer.trim().isNotEmpty) {
+          details = answer.trim();
+        }
+      }
+
+      if (question.contains('Durante los últimos 7 días') && type == 'likert') {
+        if (answer is Map<String, String>) {
+          // Ponderamos la escala textual
+          final scale = {
+            'Nunca': 0,
+            'Raramente': 1,
+            'Algunas veces': 2,
+            'Casi siempre': 3,
+            'Siempre': 4,
+          };
+          int total = 0;
+          int count = 0;
+          for (var value in answer.values) {
+            if (scale.containsKey(value)) {
+              total += scale[value]!;
+              count++;
+            }
+          }
+          if (count > 0) {
+            final avg = total ~/ count;
+            if (avg >= 3) {
+              depressionSigns =
+                  'Tuviste varios signos de desánimo como falta de energía, insomnio o pensamientos tristes.';
+            } else if (avg >= 2) {
+              depressionSigns =
+                  'Parece que has tenido algunos días difíciles, con emociones bajas.';
+            } else {
+              depressionSigns =
+                  'Tus respuestas no reflejan un malestar emocional fuerte esta semana.';
+            }
+          }
+        }
+      }
+
+      if (question.contains('¿Cómo han estado tus relaciones') &&
+          type == 'likert') {
+        if (answer is Map<String, String>) {
+          final scale = {'Muy bien': 0, 'Normal': 1, 'Mal': 2};
+          int total = 0;
+          int count = 0;
+          for (var value in answer.values) {
+            if (scale.containsKey(value)) {
+              total += scale[value]!;
+              count++;
+            }
+          }
+          if (count > 0) {
+            final avg = total ~/ count;
+            final relTexts = ['muy bien', 'normales', 'algo distantes'];
+            relationships = relTexts[avg.clamp(0, 2)];
+          }
+        }
+      }
+    }
+
+    return """
+Hola, soy Kana 🌧️  
+He leído tus respuestas con atención, y quiero que sepas que no estás sol@ 🫂
+
+Dices que actualmente $emotionalState, y que decidiste hacer este análisis porque $reason.  
+$depressionSigns  
+Tus relaciones parecen estar $relationships.
+
+${details.isNotEmpty ? "También escribiste:\n❝ $details ❞" : ""}
+
+Gracias por compartir todo esto conmigo.  
+Estoy aquí para escucharte con cariño, a tu ritmo. ¿Quieres contarme más sobre cómo te has sentido últimamente?
+""";
   }
 
   void _startLoadingSequence() {
@@ -75,10 +233,81 @@ class _ChatbotViewState extends State<ChatbotView> with SingleTickerProviderStat
     });
   }
 
-  void _startChat() {
-    // Aquí iría la lógica para iniciar la conversación con el chatbot
-    // Por ejemplo, puedes usar un controlador de mensajes o agregar el primer mensaje automáticamente
-    print("💬 Kana: ¡Hola! Estoy lista para hablar contigo.");
+  void _startChat() async {
+    if (widget.responses != null && widget.responses!.isNotEmpty) {
+      final systemPrompt = _buildDeepseekPrompt(widget.responses!);
+
+      setState(() {
+        _typingMessage = const ChatMessage(
+          message: "Kana está escribiendo...",
+          isUser: false,
+          isTemporary: true,
+        );
+        _messages.add(_typingMessage!);
+      });
+
+      try {
+        final response = await ChatService.sendMessage(systemPrompt);
+
+        setState(() {
+          _messages.remove(_typingMessage);
+          _messages.add(ChatMessage(message: response, isUser: false));
+          _addToChatHistory(response, false);
+          _typingMessage = null;
+        });
+      } catch (e) {
+        setState(() {
+          _messages.remove(_typingMessage);
+          _messages.add(ChatMessage(message: "Error: $e", isUser: false));
+          _typingMessage = null;
+        });
+      }
+    } else {
+      setState(() {
+        _messages.add(
+          const ChatMessage(
+            message: "Hola, soy Kana 🌧️ ¿Cómo te sientes hoy?",
+            isUser: false,
+          ),
+        );
+        _addToChatHistory("Hola, soy Kana 🌧️ ¿Cómo te sientes hoy?", false);
+      });
+    }
+  }
+
+  void _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _messages.add(ChatMessage(message: text, isUser: true));
+      _addToChatHistory(text, true);
+      _typingMessage = const ChatMessage(
+        message: "Kana está escribiendo...",
+        isUser: false,
+        isTemporary: true,
+      );
+      _messages.add(_typingMessage!);
+    });
+
+    _controller.clear();
+
+    try {
+      final response = await ChatService.sendMessage(text);
+
+      setState(() {
+        _messages.remove(_typingMessage);
+        _messages.add(ChatMessage(message: response, isUser: false));
+        _addToChatHistory(response, false);
+        _typingMessage = null;
+      });
+    } catch (e) {
+      setState(() {
+        _messages.remove(_typingMessage);
+        _messages.add(ChatMessage(message: "Error: $e", isUser: false));
+        _typingMessage = null;
+      });
+    }
   }
 
   @override
@@ -93,11 +322,45 @@ class _ChatbotViewState extends State<ChatbotView> with SingleTickerProviderStat
     return PopScope(
       canPop: !isLoading,
       child: Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(
-          child: isLoading
-              ? _buildLoadingView()
-              : _buildChatContent(),
+        appBar: AppBar(
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.of(context).pushAndRemoveUntil(
+                CustomPageRoute(
+                  ShowCaseWidget(builder: (context) => const DashboardView()),
+                ),
+                (Route<dynamic> route) => false,
+              );
+            },
+          ),
+          toolbarHeight: 64.0,
+          bottomOpacity: 0.5,
+          flexibleSpace: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              VerticalSpacing(8.0),
+              SvgPicture.asset(
+                Theme.of(context).colorScheme.brightness == Brightness.light
+                    ? 'assets/images/brand/sentai-logo.svg'
+                    : 'assets/images/brand/sentai-logo-dark.svg',
+                height: 24.0,
+              ),
+            ],
+          ),
+        ),
+        body: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFDCECF2), Color(0xFFF9F4EF)],
+            ),
+          ),
+          child: Center(
+            child: isLoading ? _buildLoadingView() : _buildChatContent(),
+          ),
         ),
       ),
     );
@@ -107,10 +370,7 @@ class _ChatbotViewState extends State<ChatbotView> with SingleTickerProviderStat
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        SvgPicture.asset(
-          'assets/kana-meditation.svg',
-          height: 160,
-        ),
+        SvgPicture.asset('assets/kana-meditation.svg', height: 160),
         const SizedBox(height: 20),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30.0),
@@ -142,37 +402,66 @@ class _ChatbotViewState extends State<ChatbotView> with SingleTickerProviderStat
   Widget _buildChatContent() {
     return Column(
       children: [
-        const SizedBox(height: 80),
-        const Text(
-          "Kana está aquí para ti 💙",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        // Aquí comienza el contenido del chat
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: const [
-              Text("💬 Kana: ¡Hola! ¿Cómo te sientes hoy?"),
-              // Agrega más mensajes o un controlador de chat real
-            ],
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _messages.length,
+            itemBuilder: (context, index) => _messages[index],
           ),
         ),
         Padding(
           padding: const EdgeInsets.all(16.0),
-          child: TextField(
-            decoration: InputDecoration(
-              hintText: "¿Cómo te sientes hoy?",
-              suffixIcon: const Icon(Icons.send),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(20),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    hintText:
+                        AppLocalizations.of(context)!.howAreYouFeelingToday,
+                    labelText:
+                        AppLocalizations.of(context)!.howAreYouFeelingToday,
+                    hintStyle: TextStyle(
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                    floatingLabelBehavior: FloatingLabelBehavior.never,
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(32.0),
+                      borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.outline, width: 0.0),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(32.0),
+                      borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.outline, width: 0.0),
+                    ),
+                    border: const OutlineInputBorder(),
+                    suffixIcon: Container(
+                      margin: EdgeInsets.all(8.0),
+                      child: IconButton(
+                        onPressed: _sendMessage,
+                        icon: Padding(
+                          padding: EdgeInsets.all(4.0),
+                          child: Icon(
+                            Icons.send_rounded,
+                            color: Colors.black,
+                            size: 24.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  onSubmitted: (_) => _sendMessage(),
+                ),
               ),
-            ),
-            onSubmitted: (value) {
-              // Envía mensaje del usuario
-              print("Usuario: $value");
-            },
+            ],
           ),
-        )
+        ),
       ],
     );
   }
