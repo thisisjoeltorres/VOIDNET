@@ -79,7 +79,7 @@ class _HomeViewState extends State<HomeView> {
         child: Column(
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
@@ -92,21 +92,6 @@ class _HomeViewState extends State<HomeView> {
                       ),
                       VerticalSpacing(32.0),
                     ],
-                  ),
-                ),
-                IconButton(
-                  enableFeedback: false,
-                  onPressed: () {
-                    Navigator.of(context)
-                        .push(CustomPageRoute(const SettingsView()));
-                  },
-                  icon: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Icon(
-                      Icons.settings,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      size: 24.0,
-                    ),
                   ),
                 ),
               ],
@@ -166,11 +151,10 @@ class _HomeViewState extends State<HomeView> {
                         ],
                       ),
                       VerticalSpacing(24.0),
-                      Text(
-                          style: Theme.of(context).textTheme.labelSmall,
-                          "Mis conversaciones recientes"
-                      ),
-                      // Aca el historial de conversaciones
+                      // Text(
+                      //     style: Theme.of(context).textTheme.labelSmall,
+                      //     "Mis conversaciones recientes"
+                      // ),
                     ]),
                   ),
                 ]),
