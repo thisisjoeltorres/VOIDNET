@@ -1,5 +1,7 @@
 import 'package:cron/cron.dart';
 import 'package:flutter/material.dart';
+import 'package:voidnet/views/chat_history_view.dart';
+import 'package:voidnet/views/chatbot_view.dart';
 import 'package:voidnet/views/components/bottom-navbar.dart';
 import 'package:voidnet/views/home_view.dart';
 import 'package:voidnet/views/utils/custom-page-router.dart';
@@ -34,8 +36,9 @@ class _DashboardViewState extends State<DashboardView> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> _screens = [
-      HomeView(
-      ),
+      HomeView(),
+      ChatbotView(),
+      ChatHistoryView()
     ];
 
     return Scaffold(

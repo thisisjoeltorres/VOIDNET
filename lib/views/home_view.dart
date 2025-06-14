@@ -1,11 +1,12 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
+import 'package:voidnet/views/disclaimer_view.dart';
 import 'package:voidnet/views/settings_view.dart';
 import 'package:voidnet/views/styles/spaces.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:voidnet/views/utils/custom-page-router.dart';
 import 'package:voidnet/views/utils/shared_prefs.dart';
+import 'package:voidnet/views/components/health_card.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class HomeView extends StatefulWidget {
 
@@ -17,6 +18,8 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _healthPrompt = TextEditingController();
   late String? userName;
 
   @override
@@ -24,6 +27,33 @@ class _HomeViewState extends State<HomeView> {
     userName = '';
     super.initState();
     _loadUserData();
+  }
+
+  InputDecoration _buildDecoration(String labelText) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: labelText,
+      hintStyle: TextStyle(
+        color: Theme.of(context).colorScheme.tertiary,
+      ),
+      floatingLabelBehavior: FloatingLabelBehavior.never,
+      filled: true,
+      fillColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      contentPadding:
+      const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(32.0),
+        borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline, width: 0.0),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(32.0),
+        borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outline, width: 0.0),
+      ),
+      border: const OutlineInputBorder(),
+      suffixIcon: Icon(Icons.send_rounded, color: Colors.black)
+    );
   }
 
   void _loadUserData() async {
@@ -49,55 +79,82 @@ class _HomeViewState extends State<HomeView> {
         child: Column(
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: screenWidth * 0.6,
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${AppLocalizations.of(context)!.hello}, ${userName ?? AppLocalizations.of(context)!.guestTitle}!',
-                        style: Theme.of(context).textTheme.displayLarge,
-                        textAlign: TextAlign.start,
-                        textScaler: const TextScaler.linear(1.0),
+                      SvgPicture.asset(
+                        Theme.of(context).colorScheme.brightness == Brightness.light ? 'assets/images/brand/sentai-logo.svg' : 'assets/images/brand/sentai-logo-dark.svg',
+                        height: 24,
                       ),
-                      VerticalSpacing(8.0),
-                      Text(
-                        AppLocalizations.of(context)!.awesomeDay,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        textAlign: TextAlign.start,
-                        textScaler: const TextScaler.linear(1.0),
-                      ),
+                      VerticalSpacing(32.0),
                     ],
-                  ),
-                ),
-                IconButton(
-                  enableFeedback: false,
-                  onPressed: () {
-                    Navigator.of(context)
-                        .push(CustomPageRoute(const SettingsView()));
-                  },
-                  icon: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Icon(
-                      Icons.settings,
-                      color: Theme.of(context).colorScheme.onSurface,
-                      size: 24.0,
-                    ),
                   ),
                 ),
               ],
             ),
-            VerticalSpacing(16.0),
             Expanded(
               child: Stack(children: [
                 CustomScrollView(slivers: [
                   SliverList(
                     delegate: SliverChildListDelegate([
                       VerticalSpacing(16.0),
-                      Text("Working")
+                      Text(
+                        getLabelForTime(context),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 16.0),
+                        textAlign: TextAlign.start,
+                        textScaler: const TextScaler.linear(1.0),
+                      ),
+                      VerticalSpacing(8.0),
+                      Text.rich(
+                        textScaler: const TextScaler.linear(1.0),
+                        TextSpan(
+                            text: '${userName ?? AppLocalizations.of(context)!.guestTitle}, ',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24.0, fontFamily: 'DMSans', color: Theme.of(context).colorScheme.onSurface),
+                            children: <TextSpan>[
+                              TextSpan(text: AppLocalizations.of(context)!.howAreYouFeelingToday,
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 24.0, fontWeight: FontWeight.normal, fontFamily: 'DMSans'),
+                              )
+                            ]
+                        ),
+                      ),
+                      VerticalSpacing(24.0),
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                              controller: _healthPrompt,
+                              decoration: _buildDecoration(AppLocalizations.of(context)!.howAreYouFeeling),
+                              validator: (value) => value!.isEmpty ? "Required" : null,
+                            ),
+                            VerticalSpacing(8.0),
+                          ],
+                        ),
+                      ),
+                      VerticalSpacing(16.0),
+                      Text(
+                        style: Theme.of(context).textTheme.labelSmall,
+                          "¿Estas preocupado por alguien?"
+                      ),
+                      VerticalSpacing(16.0),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          HealthCard(onCardTap: () => {
+                            Navigator.of(context).push(CustomPageRoute(DisclaimerView(isPersonalAnalysis: true,)))
+                          }, cardText: "Quiero entender mis emociones"),
+                          HealthCard(onCardTap: () => {}, cardText: "Estoy preocupado por alguien")
+                        ],
+                      ),
+                      VerticalSpacing(24.0),
+                      // Text(
+                      //     style: Theme.of(context).textTheme.labelSmall,
+                      //     "Mis conversaciones recientes"
+                      // ),
                     ]),
                   ),
                 ]),
@@ -159,5 +216,33 @@ class _HomeViewState extends State<HomeView> {
         ),
       ),
     ));
+  }
+
+  String timeOfDay() {
+    String dayOfTime = 'morning';
+    final now = TimeOfDay.now();
+
+    // Convert current time to DateTime
+    final currentDateTime = DateTime.now();
+
+    if (currentDateTime.hour > 12 && currentDateTime.hour < 18) {
+      dayOfTime = 'afternoon';
+    } else if (currentDateTime.hour >= 18 && currentDateTime.hour < 24) {
+      dayOfTime = 'evening';
+    }
+
+    return dayOfTime;
+  }
+
+  String getLabelForTime(BuildContext context) {
+    String currentTime = timeOfDay();
+
+    if (currentTime == 'morning') {
+      return AppLocalizations.of(context)!.goodMorning;
+    } else if (currentTime == 'afternoon') {
+      return AppLocalizations.of(context)!.goodAfternoon;
+    } else {
+      return AppLocalizations.of(context)!.goodEvening;
+    }
   }
 }
