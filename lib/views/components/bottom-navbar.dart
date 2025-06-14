@@ -17,10 +17,8 @@ class BottomNavbar extends StatefulWidget {
 class _BottomNavbarState extends State<BottomNavbar> {
   bool isTourCompleted = true;
   GlobalKey homeNavKey = GlobalKey();
-  GlobalKey routesNavKey = GlobalKey();
-  GlobalKey attendanceNavKey = GlobalKey();
-  GlobalKey remindersNavKey = GlobalKey();
-  GlobalKey mapNavKey = GlobalKey();
+  GlobalKey chatNavKey = GlobalKey();
+  GlobalKey historyNavKey = GlobalKey();
 
   @override
   void initState() {
@@ -43,7 +41,7 @@ class _BottomNavbarState extends State<BottomNavbar> {
   void _startShowcase() {
     WidgetsBinding.instance?.addPostFrameCallback((_) {
       ShowCaseWidget.of(widget.context).startShowCase(
-        [homeNavKey, routesNavKey, attendanceNavKey, remindersNavKey, mapNavKey],
+        [homeNavKey, chatNavKey, historyNavKey],
       );
     });
   }
@@ -97,8 +95,8 @@ class _BottomNavbarState extends State<BottomNavbar> {
               ),
             ),
             Showcase(
-              key: routesNavKey,
-              title: AppLocalizations.of(context)!.tourRoutes,
+              key: chatNavKey,
+              title: AppLocalizations.of(context)!.tourChat,
               tooltipBorderRadius: BorderRadius.circular(24.0),
               tooltipPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
               targetPadding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4.0),
@@ -118,18 +116,18 @@ class _BottomNavbarState extends State<BottomNavbar> {
                 fontFamily: 'Inter',
                 color: Theme.of(context).colorScheme.tertiary,
               ),
-              description: AppLocalizations.of(context)!.tourRoutesDescription,
+              description: AppLocalizations.of(context)!.tourChatDescription,
               child: GestureDetector(
                 onTap: () => widget.onTap(1),
                 child: NavButton(
-                  icon: Icons.route_rounded,
+                  icon: Icons.chat_rounded,
                   selected: widget.currentIndex == 1,
                 ),
               ),
             ),
             Showcase(
-              key: attendanceNavKey,
-              title: AppLocalizations.of(context)!.tourAttendance,
+              key: historyNavKey,
+              title: AppLocalizations.of(context)!.tourHistory,
               tooltipBorderRadius: BorderRadius.circular(24.0),
               tooltipPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
               targetPadding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4.0),
@@ -149,78 +147,12 @@ class _BottomNavbarState extends State<BottomNavbar> {
                 fontFamily: 'Inter',
                 color: Theme.of(context).colorScheme.tertiary,
               ),
-              description: AppLocalizations.of(context)!.tourAttendanceDescription,
+              description: AppLocalizations.of(context)!.tourHistoryDescription,
               child: GestureDetector(
                 onTap: () => widget.onTap(2),
                 child: NavButton(
-                  icon: Icons.draw_rounded,
+                  icon: Icons.history_rounded,
                   selected: widget.currentIndex == 2,
-                ),
-              ),
-            ),
-            Showcase(
-              key: remindersNavKey,
-              title: AppLocalizations.of(context)!.tourReminders,
-              tooltipBorderRadius: BorderRadius.circular(24.0),
-              tooltipPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
-              targetPadding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4.0),
-              targetBorderRadius: BorderRadius.circular(32.0),
-              tooltipBackgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-              titlePadding: const EdgeInsets.only(bottom: 8.0),
-              scaleAnimationCurve: Curves.ease,
-              titleTextStyle: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 16.0,
-                fontFamily: 'Inter',
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              descTextStyle: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14.0,
-                fontFamily: 'Inter',
-                color: Theme.of(context).colorScheme.tertiary,
-              ),
-              description: AppLocalizations.of(context)!.tourRemindersDescription,
-              child: GestureDetector(
-                onTap: () => widget.onTap(3),
-                child: NavButton(
-                  icon: Icons.notifications_rounded,
-                  selected: widget.currentIndex == 3,
-                ),
-              ),
-            ),
-            Showcase(
-              key: mapNavKey,
-              title: AppLocalizations.of(context)!.tourMap,
-              tooltipBorderRadius: BorderRadius.circular(24.0),
-              tooltipPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
-              targetPadding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 4.0),
-              targetBorderRadius: BorderRadius.circular(32.0),
-              tooltipBackgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-              titlePadding: const EdgeInsets.only(bottom: 8.0),
-              scaleAnimationCurve: Curves.ease,
-              onTargetClick: _updateTourCompletion,
-              onBarrierClick: _updateTourCompletion,
-              onToolTipClick: _updateTourCompletion,
-              disposeOnTap: true,
-              titleTextStyle: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 16.0,
-                fontFamily: 'Inter',
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              descTextStyle: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14.0,
-                fontFamily: 'Inter',
-                color: Theme.of(context).colorScheme.tertiary,
-              ),
-              description: AppLocalizations.of(context)!.tourMapDescription,
-              child: GestureDetector(
-                onTap: () => widget.onTap(4),
-                child: NavButton(
-                  icon: Icons.map_rounded,
-                  selected: widget.currentIndex == 4,
                 ),
               ),
             ),

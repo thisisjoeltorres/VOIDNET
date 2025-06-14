@@ -6,6 +6,8 @@ import 'package:voidnet/views/components/chat_message.dart';
 import 'package:voidnet/views/dashboard_view.dart';
 import 'package:voidnet/views/styles/spaces.dart';
 import 'package:voidnet/views/utils/chat_service.dart';
+import 'package:voidnet/views/utils/chat_session.dart';
+import 'package:voidnet/views/utils/chat_storage.dart';
 import 'package:voidnet/views/utils/custom-page-router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -24,7 +26,7 @@ class _ChatbotViewState extends State<ChatbotView>
   bool hasAnalysis = false;
   String loadingMessage = "Analizando tus resultados...";
   int loadingStep = 0;
-  late Timer _messageTimer;
+  late Timer _messageTimer = Timer(Duration.zero, () {});
   late AnimationController _progressController;
   late Animation<double> _progressAnimation;
   final List<String> loadingMessages = [
@@ -354,10 +356,25 @@ Estoy aquí para escucharte con cariño, a tu ritmo. ¿Quieres contarme más sob
     }
   }
 
+  void _saveChatSession() async {
+    final session = ChatSession(
+      sessionId: DateTime.now().millisecondsSinceEpoch.toString(),
+      sessionType: 'personal',
+      startedAt: DateTime.now(),
+      messages: _chatHistory,
+    );
+
+    print("Session has been saved. Contents: $session.");
+
+    // Ejemplo: guardarlo en local usando SharedPreferences o en Firebase
+    await ChatStorage.saveChatSession(session);
+  }
+
   @override
   void dispose() {
     _messageTimer.cancel();
     _progressController.dispose();
+    _saveChatSession();
     super.dispose();
   }
 

@@ -63,6 +63,11 @@ class _OnboardingOutroState extends State<OnboardingOutro> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
+                        Image.asset(
+                          "assets/images/illustrations/kana-smiling.png",
+                          width: screenWidth * 0.4,
+                        ),
+                        VerticalSpacing(16.0),
                         Text(
                           AppLocalizations.of(context)!.allDone,
                           textAlign: TextAlign.center,
