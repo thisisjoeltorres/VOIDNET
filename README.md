@@ -36,8 +36,8 @@ Desarrollar un sistema inteligente que analice texto y voz usando PLN para ident
 ## 🚀 Roadmap Inicial
 
 - [x] Inicializar proyecto Flutter + configuración con Kotlin
-- [ ] Diseñar UI del onboarding y flujo principal
-- [ ] Integrar sistema de entrada de texto/voz
+- [x] Diseñar UI del onboarding y flujo principal
+- [x] Integrar sistema de entrada de texto
 - [ ] Entrenar e integrar modelo PLN (TF Lite)
 - [ ] Añadir autenticación Firebase (opcional)
 - [ ] Pruebas piloto con dataset de ejemplo
