@@ -13,8 +13,11 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ChatbotView extends StatefulWidget {
   final List<Map<String, dynamic>>? responses;
+  final List<Map<String, dynamic>>? previousChatHistory;
+  final String? chatSessionId;
+  final DateTime? chatStartedAt;
 
-  const ChatbotView({super.key, this.responses});
+  const ChatbotView({super.key, this.responses, this.previousChatHistory, this.chatSessionId, this.chatStartedAt});
 
   @override
   State<ChatbotView> createState() => _ChatbotViewState();
@@ -24,6 +27,7 @@ class _ChatbotViewState extends State<ChatbotView>
     with SingleTickerProviderStateMixin {
   bool isLoading = false;
   bool hasAnalysis = false;
+  bool _chatStarted = false;
   String loadingMessage = "Analizando tus resultados...";
   int loadingStep = 0;
   late Timer _messageTimer = Timer(Duration.zero, () {});
@@ -61,6 +65,22 @@ class _ChatbotViewState extends State<ChatbotView>
       isLoading = true;
       hasAnalysis = true;
       _startLoadingSequence();
+    } else if (widget.previousChatHistory != null && widget.previousChatHistory!.isNotEmpty) {
+      for (final item in widget.previousChatHistory!) {
+        final isUser = item['sender'] == 'user';
+        final msg = item['message'];
+        if (msg != null && msg.toString().trim().isNotEmpty) {
+          _messages.add(ChatMessage(message: msg, isUser: isUser));
+          _chatHistory.add(item); // preserva para resumen
+        }
+      }
+
+      _summaryHistory.addAll(
+        widget.previousChatHistory!
+            .where((m) => m['sender'] == 'kana')
+            .map((m) => "[RESUMEN OCULTO]: ${m['message']}")
+            .take(5),
+      );
     } else {
       _startChat();
     }
@@ -95,121 +115,6 @@ Información del usuario:
 ${buffer.toString()}
 ---
 Recuerda: No repitas los datos textualmente, responde con análisis humano y emocional.
-""";
-  }
-
-  String _generateInitialMessage(List<Map<String, dynamic>> responses) {
-    String emotionalState = '';
-    String reason = '';
-    String details = '';
-    String depressionSigns = '';
-    String relationships = '';
-
-    for (var q in responses) {
-      final String question = q['question'];
-      final String type = q['type'];
-      final dynamic answer = q['answer'];
-
-      if (question.contains('¿Cómo te sientes hoy?') && type == 'single') {
-        final options = [
-          'te sientes bastante bien',
-          'te sientes bien',
-          'te sientes neutral',
-          'te sientes algo mal',
-          'te sientes bastante mal',
-        ];
-        if (answer is Map && answer['selectedIndex'] is int) {
-          final index = answer['selectedIndex'];
-          if (index >= 0 && index < options.length) {
-            emotionalState = options[index];
-          }
-        }
-      }
-
-      if (question.contains('¿Qué te motivó') && type == 'multiple') {
-        if (answer is List) {
-          final reasons =
-              answer
-                  .map((item) => item['selectedText'])
-                  .whereType<String>()
-                  .toList();
-          reason = reasons.join(', ').toLowerCase();
-        }
-      }
-
-      if (question.contains('escribir algo más') && type == 'text') {
-        if (answer is String && answer.trim().isNotEmpty) {
-          details = answer.trim();
-        }
-      }
-
-      if (question.contains('Durante los últimos 7 días') && type == 'likert') {
-        if (answer is Map<String, String>) {
-          // Ponderamos la escala textual
-          final scale = {
-            'Nunca': 0,
-            'Raramente': 1,
-            'Algunas veces': 2,
-            'Casi siempre': 3,
-            'Siempre': 4,
-          };
-          int total = 0;
-          int count = 0;
-          for (var value in answer.values) {
-            if (scale.containsKey(value)) {
-              total += scale[value]!;
-              count++;
-            }
-          }
-          if (count > 0) {
-            final avg = total ~/ count;
-            if (avg >= 3) {
-              depressionSigns =
-                  'Tuviste varios signos de desánimo como falta de energía, insomnio o pensamientos tristes.';
-            } else if (avg >= 2) {
-              depressionSigns =
-                  'Parece que has tenido algunos días difíciles, con emociones bajas.';
-            } else {
-              depressionSigns =
-                  'Tus respuestas no reflejan un malestar emocional fuerte esta semana.';
-            }
-          }
-        }
-      }
-
-      if (question.contains('¿Cómo han estado tus relaciones') &&
-          type == 'likert') {
-        if (answer is Map<String, String>) {
-          final scale = {'Muy bien': 0, 'Normal': 1, 'Mal': 2};
-          int total = 0;
-          int count = 0;
-          for (var value in answer.values) {
-            if (scale.containsKey(value)) {
-              total += scale[value]!;
-              count++;
-            }
-          }
-          if (count > 0) {
-            final avg = total ~/ count;
-            final relTexts = ['muy bien', 'normales', 'algo distantes'];
-            relationships = relTexts[avg.clamp(0, 2)];
-          }
-        }
-      }
-    }
-
-    return """
-Hola, soy Kana 🌧️  
-He leído tus respuestas con atención, y quiero que sepas que no estás sol@ 🫂
-
-Dices que actualmente $emotionalState, y que decidiste hacer este análisis porque $reason.  
-$depressionSigns  
-Tus relaciones parecen estar $relationships.
-
-${details.isNotEmpty ? "También escribiste:\n❝ $details ❞" : ""}
-
-Gracias por compartir todo esto conmigo.  
-Estoy aquí para escucharte con cariño, a tu ritmo. ¿Quieres contarme más sobre cómo te has sentido últimamente?
 """;
   }
 
@@ -311,6 +216,17 @@ Estoy aquí para escucharte con cariño, a tu ritmo. ¿Quieres contarme más sob
   void _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+    _chatStarted = true;
+
+    if (_chatHistory.isEmpty && _messages.isNotEmpty) {
+      final kanaIntro = _messages.firstWhere(
+            (m) => !m.isUser && m.message.contains("¿Cómo te sientes hoy?"),
+        orElse: () => ChatMessage(message: "", isUser: false),
+      );
+      if (kanaIntro.message.isNotEmpty) {
+        _addToChatHistory(kanaIntro.message, false);
+      }
+    }
 
     setState(() {
       _messages.add(ChatMessage(message: text, isUser: true));
@@ -358,23 +274,26 @@ Estoy aquí para escucharte con cariño, a tu ritmo. ¿Quieres contarme más sob
 
   void _saveChatSession() async {
     final session = ChatSession(
-      sessionId: DateTime.now().millisecondsSinceEpoch.toString(),
+      sessionId: (widget.chatSessionId != null) ? widget.chatSessionId! : DateTime.now().millisecondsSinceEpoch.toString(),
       sessionType: 'personal',
-      startedAt: DateTime.now(),
+      startedAt: widget.previousChatHistory != null && widget.previousChatHistory!.isNotEmpty
+          ? widget.chatStartedAt!
+          : DateTime.now(),
       messages: _chatHistory,
     );
 
-    print("Session has been saved. Contents: $session.");
-
-    // Ejemplo: guardarlo en local usando SharedPreferences o en Firebase
-    await ChatStorage.saveChatSession(session);
+    if (widget.chatSessionId != null) {
+      await ChatStorage.updateChatSession(session);
+    } else {
+      await ChatStorage.saveChatSession(session);
+    }
   }
 
   @override
   void dispose() {
     _messageTimer.cancel();
     _progressController.dispose();
-    _saveChatSession();
+    if (_chatStarted) _saveChatSession();
     super.dispose();
   }
 
