@@ -148,18 +148,7 @@ Recuerda: No repitas los datos textualmente, responde con análisis humano y emo
       });
     });
 
-    // Finaliza la carga tras 8 segundos (puedes ajustar)
-    Future.delayed(const Duration(seconds: 8), () {
-      _messageTimer.cancel();
-      setState(() {
-        isLoading = false;
-      });
-
-      // Simula mensaje de inicio del chatbot tras carga
-      Future.delayed(const Duration(milliseconds: 500), () {
-        _startChat();
-      });
-    });
+    _startChat();
   }
 
   void _startChat() async {
@@ -167,6 +156,7 @@ Recuerda: No repitas los datos textualmente, responde con análisis humano y emo
       final systemPrompt = _buildDeepseekPrompt(widget.responses!);
 
       setState(() {
+        isLoading = true;
         _typingMessage = const ChatMessage(
           message: "Kana está escribiendo...",
           isUser: false,
@@ -177,6 +167,11 @@ Recuerda: No repitas los datos textualmente, responde con análisis humano y emo
 
       try {
         final response = await ChatService.sendMessage(systemPrompt);
+
+        if (response == null || response.trim().isEmpty) {
+          throw Exception("La respuesta de Kana está vacía.");
+        }
+
         final parsed = _extractHiddenSummary(response);
 
         setState(() {
@@ -198,6 +193,13 @@ Recuerda: No repitas los datos textualmente, responde con análisis humano y emo
           _messages.remove(_typingMessage);
           _messages.add(ChatMessage(message: "Error: $e", isUser: false));
           _typingMessage = null;
+        });
+      } finally {
+        if (_messageTimer.isActive) {
+          _messageTimer.cancel();
+        }
+        setState(() {
+          isLoading = false;
         });
       }
     } else {
@@ -357,7 +359,7 @@ Recuerda: No repitas los datos textualmente, responde con análisis humano y emo
           child: AnimatedBuilder(
             animation: _progressAnimation,
             builder: (context, child) {
-              return LinearProgressIndicator(
+              return CircularProgressIndicator(
                 value: _progressAnimation.value,
                 valueColor: const AlwaysStoppedAnimation<Color>(Colors.teal),
                 backgroundColor: Colors.grey.shade300,

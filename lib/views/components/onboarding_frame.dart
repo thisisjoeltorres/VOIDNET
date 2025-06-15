@@ -3,7 +3,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:voidnet/enums/enums.dart';
 import 'package:voidnet/models/UserData.dart';
 import 'package:voidnet/views/components/get_started_name.dart';
-import 'package:voidnet/views/components/get_started_terms.dart';
 import 'package:voidnet/views/components/get_started_gender.dart';
 import 'package:voidnet/views/components/get_started_age_range.dart';
 import 'package:voidnet/views/components/onboarding_outro.dart';
@@ -71,9 +70,6 @@ class _OnboardingFrameState extends State<OnboardingFrame> with SingleTickerProv
         case 2:
           userData.userAgeRange = value;
           break;
-        case 3:
-          userData.termsAccepted = value as bool;
-          break;
       }
     });
   }
@@ -113,8 +109,6 @@ class _OnboardingFrameState extends State<OnboardingFrame> with SingleTickerProv
         return userData.userGender != Gender.unknown;
       case 2:
         return userData.userAgeRange != AgeRange.unknown;
-      case 3:
-        return userData.termsAccepted == true;
       default:
         return false;
     }
@@ -124,7 +118,6 @@ class _OnboardingFrameState extends State<OnboardingFrame> with SingleTickerProv
     await SharedPrefs().prefs.setString('userName', userData.userName);
     await SharedPrefs().prefs.setInt('userGender', userData.userGender.index);
     await SharedPrefs().prefs.setInt('userAgeRange', userData.userAgeRange.index);
-    await SharedPrefs().prefs.setBool('termsAccepted', userData.termsAccepted);
     await SharedPrefs().prefs.setBool('enableReminders', true);
     await SharedPrefs().prefs.setBool('tourCompleted', false);
     await SharedPrefs().reload();
@@ -138,8 +131,6 @@ class _OnboardingFrameState extends State<OnboardingFrame> with SingleTickerProv
         return userData.userGender != Gender.unknown;
       case 2:
         return userData.userAgeRange != AgeRange.unknown;
-      case 3:
-        return userData.termsAccepted == true;
       default:
         return false;
     }
@@ -194,11 +185,6 @@ class _OnboardingFrameState extends State<OnboardingFrame> with SingleTickerProv
         return GetStartedAgeRange(
           userData: userData,
           onAgeRangeChanged: _updateStep,
-        );
-      case 3:
-        return GetStartedTerms(
-          userData: userData,
-          onTermsAccepted: _updateStep,
         );
       default:
         return Container();

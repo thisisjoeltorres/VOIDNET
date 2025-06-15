@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:voidnet/views/utils/chat_session.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ChatStorage {
   static const String key = 'chat_sessions';
@@ -43,7 +44,7 @@ class ChatStorage {
   void clearChatHistory(BuildContext context) async {
     await ChatStorage.clearSessions();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Historial de chats eliminado.')),
+      SnackBar(content: Text(AppLocalizations.of(context)!.chatHistoryDeleted)),
     );
   }
 }

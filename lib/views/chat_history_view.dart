@@ -31,16 +31,16 @@ class _ChatHistoryViewState extends State<ChatHistoryView> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('¿Eliminar historial?'),
-        content: const Text('Esta acción no se puede deshacer.'),
+        title: Text(AppLocalizations.of(context)!.deleteHistory),
+        content: Text(AppLocalizations.of(context)!.thisActionCannotBe),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Eliminar'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),
@@ -49,7 +49,7 @@ class _ChatHistoryViewState extends State<ChatHistoryView> {
     if (confirmed == true) {
       await ChatStorage.clearSessions();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Historial de chats eliminado.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.chatHistoryDeleted)),
       );
       setState(() {
         _loadChatSessions();

@@ -4,7 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ChatService {
   static final String _apiKey = dotenv.env['OPENROUTER_API_KEY']!;
-  static final String _apiUrl = dotenv.env['DEEPSEEK_API_URL']!;
+  static final String _apiUrl = dotenv.env['OPENROUTER_API_URL']!;
 
   static Future<String> sendMessage(String message) async {
     try {
