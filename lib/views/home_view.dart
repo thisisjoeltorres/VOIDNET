@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:voidnet/views/disclaimer_view.dart';
-import 'package:voidnet/views/settings_view.dart';
 import 'package:voidnet/views/styles/spaces.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:voidnet/views/utils/custom-page-router.dart';

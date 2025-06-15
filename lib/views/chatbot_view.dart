@@ -203,12 +203,12 @@ Recuerda: No repitas los datos textualmente, responde con análisis humano y emo
     } else {
       setState(() {
         _messages.add(
-          const ChatMessage(
-            message: "Hola, soy Kana 🌧️ ¿Cómo te sientes hoy?",
+          ChatMessage(
+            message: AppLocalizations.of(context)!.kanaHowYouFeel,
             isUser: false,
           ),
         );
-        _addToChatHistory("Hola, soy Kana 🌧️ ¿Cómo te sientes hoy?", false);
+        _addToChatHistory(AppLocalizations.of(context)!.kanaHowYouFeel, false);
       });
     }
   }
