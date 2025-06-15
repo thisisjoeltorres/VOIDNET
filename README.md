@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15669857.svg)](https://doi.org/10.5281/zenodo.15669857)
+
 # 🧠 VOIDNET
 
 > Detección temprana de señales de depresión y riesgo suicida usando Inteligencia Artificial y Procesamiento del Lenguaje Natural (PLN)
