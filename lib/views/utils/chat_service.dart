@@ -15,7 +15,7 @@ class ChatService {
           'Authorization': 'Bearer $_apiKey',
         },
         body: jsonEncode({
-          'model': 'deepseek/deepseek-r1:free', // o el modelo que prefieras
+          'model': 'tngtech/deepseek-r1t-chimera:free',
           'messages': [
             {'role': 'user', 'content': message}
           ],
