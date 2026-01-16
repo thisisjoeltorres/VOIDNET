@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:showcaseview/showcaseview.dart';
@@ -10,6 +11,7 @@ import 'package:voidnet/views/utils/chat_session.dart';
 import 'package:voidnet/views/utils/chat_storage.dart';
 import 'package:voidnet/views/utils/custom-page-router.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:voidnet/services/multimodal_analysis_service.dart';
 
 class ChatbotView extends StatefulWidget {
   final List<Map<String, dynamic>>? responses;
@@ -86,6 +88,36 @@ class _ChatbotViewState extends State<ChatbotView>
     }
   }
 
+  Future<List<Map<String, dynamic>>> _analyzeThirdPartyAudios(
+      List<Map<String, dynamic>> responses,
+      ) async {
+    final List<Map<String, dynamic>> audioAnalyses = [];
+
+    for (final item in responses) {
+      if (item['type'] == 'audio' && item['answer'] is List) {
+        for (final audio in item['answer']) {
+          final path = audio['file_path'];
+          if (path != null) {
+            final file = File(path);
+
+            // ⚠️ V1: transcripción simulada o externa
+            final transcription = "Transcripción no literal del audio importado.";
+
+            final analysis =
+            MultimodalAnalysisService.analyzeAudioMessage(
+              audioFile: file,
+              transcription: transcription,
+            );
+
+            audioAnalyses.add(analysis);
+          }
+        }
+      }
+    }
+
+    return audioAnalyses;
+  }
+
   void _addToChatHistory(String message, bool isUser) {
     _chatHistory.add({
       'timestamp': DateTime.now().toIso8601String(),
@@ -94,27 +126,52 @@ class _ChatbotViewState extends State<ChatbotView>
     });
   }
 
-  String _buildDeepseekPrompt(List<dynamic> responses) {
+  String _buildDeepseekPrompt(
+      List<dynamic> responses,
+      List<Map<String, dynamic>> audioAnalyses,
+      ) {
     final buffer = StringBuffer();
 
     for (final item in responses) {
       final map = item as Map<String, dynamic>;
+      if (map['type'] == 'audio') continue; // audio va aparte
+
       final question = map['question'] ?? '';
       final answer = map['answer'] ?? '';
       buffer.writeln('• $question\nRespuesta: $answer\n');
     }
 
-    return """
-    IMPORTANTE: Comienza tu respuesta con una línea como esta:
-    [RESUMEN OCULTO]: resumen aquí
-    Luego continúa con tu respuesta natural para el usuario.
-Eres un terapeuta profesional en salud mental llamado Kana 🌧️. Has recibido la siguiente información de un usuario que completó un formulario de evaluación emocional. Analiza sus respuestas con empatía y claridad.
+    final audioBuffer = StringBuffer();
 
-Información del usuario:
+    if (audioAnalyses.isNotEmpty) {
+      audioBuffer.writeln("Análisis de mensajes de voz:");
+      for (final analysis in audioAnalyses) {
+        audioBuffer.writeln("""
+- Indicadores detectados:
+  • Duración estimada: ${analysis['audio_metadata']['duracion_seg']} segundos
+  • Velocidad de habla: ${analysis['audio_metadata']['velocidad_habla']}
+  • Pausas largas: ${analysis['audio_metadata']['pausas_largas']}
+  • Lenguaje negativo: ${analysis['analisis_texto']['lenguaje_negativo']}
+""");
+      }
+    }
+
+    return """
+IMPORTANTE: Comienza tu respuesta con una línea como esta:
+[RESUMEN OCULTO]: resumen aquí
+
+Eres un profesional en salud mental llamado Kana 🌧️. Estás ayudando a una persona que desea comprender y acompañar mejor a un tercero.
+
+Información contextual recopilada:
 ---
 ${buffer.toString()}
+${audioBuffer.toString()}
 ---
-Recuerda: No repitas los datos textualmente, responde con análisis humano y emocional.
+
+Instrucciones:
+- No repitas literalmente los datos.
+- Integra los indicadores de voz como señales emocionales, no como hechos absolutos.
+- Mantén un tono empático, prudente y orientado al acompañamiento.
 """;
   }
 
@@ -153,7 +210,11 @@ Recuerda: No repitas los datos textualmente, responde con análisis humano y emo
 
   void _startChat() async {
     if (widget.responses != null && widget.responses!.isNotEmpty) {
-      final systemPrompt = _buildDeepseekPrompt(widget.responses!);
+      final audioAnalyses =
+      await _analyzeThirdPartyAudios(widget.responses!);
+
+      final systemPrompt =
+      _buildDeepseekPrompt(widget.responses!, audioAnalyses);
 
       setState(() {
         isLoading = true;
